@@ -138,13 +138,16 @@ void PrintLastErrorMessage()
 /*最後の子ウィンドウを探索*/
 HWND GetTheLastChildWindowHandleFromClassName(const wchar_t* szClassName)
 {
-	HWND hWnd = nullptr;
-
-	for (;;)
+	for (HWND hWnd = nullptr;;)
 	{
 		hWnd = ::FindWindowEx(0, hWnd, szClassName, 0);
-		if (!hWnd) break;
+		if (hWnd == nullptr)break;
 		if (!::IsWindowVisible(hWnd)) continue;
+
+		constexpr LONG searchWindowStyle = WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+
+		LONG lStyle = ::GetWindowLong(hWnd, GWL_STYLE);
+		if (lStyle == searchWindowStyle)continue;
 
 		return hWnd;
 	}
@@ -185,14 +188,9 @@ bool SaveWindowSize(const char* szFileName, RECT rect)
 			char buffer[256]{};
 			sprintf_s(buffer, "Left:%ld, Top:%ld, Right:%ld, Bottom:%ld;\r\n", rect.left, rect.top, rect.right, rect.bottom);
 			DWORD bytesWrite = 0;
-			BOOL bRet = ::WriteFile(hFile, buffer, static_cast<DWORD>(strlen(buffer)), &bytesWrite, nullptr);
-			if (!bRet)
-			{
-				::CloseHandle(hFile);
-				return false;
-			}
+			BOOL iRet = ::WriteFile(hFile, buffer, static_cast<DWORD>(strlen(buffer)), &bytesWrite, nullptr);
 			::CloseHandle(hFile);
-			return true;
+			return iRet == TRUE;
 		}
 	}
 	return false;
